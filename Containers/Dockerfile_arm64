@@ -3,7 +3,7 @@ ARG ALPINE_VERSION=3.21
 #--------------------------------Image--------------------------------
 FROM alpine:${ALPINE_VERSION}
 RUN set -ex; \
-apk update && apk add --no-cache bash openrc openresolv iproute2 libqrencode p7zip
+apk update && apk add --no-cache bash tzdata openrc openresolv iproute2 libqrencode p7zip
 
 #Tun2Socks
 RUN mkdir /opt/tun2socks/
