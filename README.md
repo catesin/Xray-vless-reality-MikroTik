@@ -3,16 +3,13 @@
 
 ![img](Demonstration/logo.png)
 
-:dizzy: Аналог [AmneziaWG + MikroTik](https://github.com/catesin/AmneziaVPN-MikroTik)
-
-
 В данном репозитории рассматривается работа MikroTik RouterOS V7.18.2+ с протоколом **XRay Vless Reality**. В процессе настройки, относительно вашего оборудования, следует выбрать вариант реализации с [контейнером](https://help.mikrotik.com/docs/display/ROS/Container) внутри RouterOS или без контейнера. 
 
 Предполагается что вы уже настроили серверную часть Xray например [с помощью панели управления 3x-ui](https://github.com/MHSanaei/3x-ui) и протестировали конфигурацию клиента например на смартфоне или персональном ПК.
 
 :school: Внимание! Инструкция среднего уровня сложности. Перед применением настроек вам необходимо иметь опыт в настройке MikroTik уровня сертификации MTCNA. 
 
-Присутствуют готовые контейнеры на [Docker Hub](https://hub.docker.com/u/catesin) которые можно сразу использовать внутри RouterOS. Контейнеры делятся на три архитектуры **ARM, ARM64 и x86**.
+Присутствуют готовые контейнеры на [Docker Hub](https://hub.docker.com/u/gritsenko/xray-mikrotik) которые можно сразу использовать внутри RouterOS. Контейнеры делятся на три архитектуры **ARM, ARM64 и x86**.
 
 Вариант №2 без контейнера подойдёт к любому домашнему роутеру который хоть немного умеет работать с аналогичными в MikroTik адрес-листами или имеет расширенный функционал по маршрутизации.
 
@@ -95,7 +92,7 @@ add action=mark-routing chain=output connection-mark=to-vpn-conn-local \
 Так же предполагается что на устройстве (или если есть USB порт с флешкой) имеется +- 50 Мбайт свободного места для разворачивания контейнера внутри RouterOS и +- 150 Мбайт в оперативной памяти. Если места в storage не хватает, его можно временно расширить [за счёт оперативной памяти](https://www.youtube.com/watch?v=uZKTqRtXu4M). После перезагрузки RouterOS, всё что находится в RAM, стирается. 
 
 <a name='R_Xray_1_build_ready'></a>
-**Где взять контейнер?** Его можно собрать самому из текущего репозитория каталога **"Containers"** или скачать готовый образ под выбранную архитектуру из [Docker Hub](https://hub.docker.com/u/catesin).
+**Где взять контейнер?** Его можно собрать самому из текущего репозитория каталога **"Containers"** или скачать готовый образ под выбранную архитектуру из [Docker Hub](https://hub.docker.com/u/).
 Скачав готовый образ [переходим сразу к настройке](#R_Xray_1_settings).
 
 
@@ -134,7 +131,7 @@ docker buildx build -f Dockerfile_amd64 --no-cache --progress=plain --platform l
 Иногда процесс создания образа может подвиснуть из-за плохого соединения с интернетом. Следует повторно запустить сборку. 
 После сборки образа вы можете загрузить контейнер в приватный репозиторий Docker HUB и продолжить настройку по [следующему пункту](#R_Xray_1_settings)
 
-Вариант с локальным сохранением контейнера в .tar через ```docker save``` тоже может сработать, но у меня на последней версии Docker RouterOS ругался на данный способ импорта
+Вариант с локальным сохранением контейнера в .tar череcatesinз ```docker save``` тоже может сработать, но у меня на последней версии Docker RouterOS ругался на данный способ импорта
 
 
 <a name='R_Xray_1_settings'></a>
@@ -205,17 +202,14 @@ add key=PUBLIC_KEY_PBK name=xvr value=fTndnleCTkK9_jtpwCAdxtEwJUkQ22oY1W8dTza2xH
 add key=SHORT_ID_SID name=xvr value=29d2d3d5a398
 ```
 
-7) Теперь создадим сам контейнер. Здесь вам нужно выбрать репозиторий из [Docker Hub](https://hub.docker.com/u/catesin) с архитектурой под ваше устройство.
+7) Теперь создадим сам контейнер. Здесь вам нужно выбрать репозиторий из [Docker Hub](https://hub.docker.com/r/gritsenko/xray-mikrotik) с архитектурой под ваше устройство.
 
-Варианты:
-- catesin/xray-mikrotik-amd64
-- catesin/xray-mikrotik-arm
-- catesin/xray-mikrotik-arm64
+
 
 Пример импорта контейнера в ramstorage (по факту в оперативную память) для arm64. Подставьте в ```remote-image``` нужный репозиторий и отредактируйте местоположение контейнера в ```root-dir``` при необходимости.
 
 ```
-/container/add remote-image=catesin/xray-mikrotik-arm64:latest hostname=xray-vless interface=docker-xray-vless-veth logging=yes start-on-boot=yes envlist=xvr root-dir=ramstorage/container-xray-mikrotik
+/container/add remote-image=gritsenko/xray-mikrotik:arm64 hostname=xray-vless interface=xray-vless logging=no start-on-boot=yes envlist=xvr root-dir=/docker/container-xray-mikrotik
 ```
 Подождите немного пока контейнер распакуется до конца. В итоге у вас должна получиться похожая картина, в которой есть распакованный контейнер и окружение envs. Если в процессе импорта возникают ошибки, внимательно читайте лог из RouterOS.
 
