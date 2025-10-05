@@ -209,7 +209,7 @@ add key=TZ                list=xvr value=Europe/Moscow
 Пример импорта контейнера в ramstorage (по факту в оперативную память) для arm64. Подставьте в ```remote-image``` нужный репозиторий и отредактируйте местоположение контейнера в ```root-dir``` при необходимости.
 
 ```
-/container/add remote-image=gritsenko/xray-mikrotik:arm64 hostname=xray-vless interface=xray-vless logging=no start-on-boot=yes envlist=xvr root-dir=/docker/container-xray-mikrotik
+/container/add remote-image=gritsenko/xray-mikrotik:arm64 hostname=xray-vless interface=xray-vless logging=no start-on-boot=yes envlist=xvr root-dir=/docker/container-xray-mikrotik dns=172.18.20.5
 ```
 Подождите немного пока контейнер распакуется до конца. В итоге у вас должна получиться похожая картина, в которой есть распакованный контейнер и окружение envs. Если в процессе импорта возникают ошибки, внимательно читайте лог из RouterOS.
 
