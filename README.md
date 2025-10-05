@@ -3,7 +3,7 @@
 
 ![img](Demonstration/logo.png)
 
-В данном репозитории рассматривается работа MikroTik RouterOS V7.18.2+ с протоколом **XRay Vless Reality**. В процессе настройки, относительно вашего оборудования, следует выбрать вариант реализации с [контейнером](https://help.mikrotik.com/docs/display/ROS/Container) внутри RouterOS или без контейнера. 
+В данном репозитории рассматривается работа MikroTik RouterOS V7.20+ с протоколом **XRay Vless Reality**. В процессе настройки, относительно вашего оборудования, следует выбрать вариант реализации с [контейнером](https://help.mikrotik.com/docs/display/ROS/Container) внутри RouterOS или без контейнера. 
 
 Предполагается что вы уже настроили серверную часть Xray например [с помощью панели управления 3x-ui](https://github.com/MHSanaei/3x-ui) и протестировали конфигурацию клиента например на смартфоне или персональном ПК.
 
@@ -162,17 +162,17 @@ set ram-high=200.0MiB registry-url=https://registry-1.docker.io tmpdir=ramstorag
 
 1) Создадим интерфейс для контейнера
 ```
-/interface veth add address=172.18.20.6/30 gateway=172.18.20.5 gateway6="" name=docker-xray-vless-veth
+/interface veth add address=172.18.20.6/30 gateway=172.18.20.5 gateway6="" name=xray-vless
 ```
 
 2) Добавим правило в mangle для изменения mss для трафика, уходящего в контейнер. Поместите его после правила с RFC1918 (его мы создали ранее).
 ```
-/ip firewall mangle add action=change-mss chain=forward new-mss=1360 out-interface=docker-xray-vless-veth passthrough=yes protocol=tcp tcp-flags=syn tcp-mss=1420-65535
+/ip firewall mangle add action=change-mss chain=forward new-mss=1360 out-interface=xray-vless passthrough=yes protocol=tcp tcp-flags=syn tcp-mss=1420-65535
 ```
 
 3) Назначим на созданный интерфейс IP адрес. IP 172.18.20.6 возьмёт себе контейнер, а 172.18.20.5 будет адрес RouterOS.
 ```
-/ip address add interface=docker-xray-vless-veth address=172.18.20.5/30
+/ip address add interface=xray-vless address=172.18.20.5/30
 ```
 4) В таблице маршрутизации "r_to_vpn" создадим маршрут по умолчанию ведущий на контейнер
 ```
@@ -180,7 +180,7 @@ set ram-high=200.0MiB registry-url=https://registry-1.docker.io tmpdir=ramstorag
 ```
 5) Включаем masquerade для всего трафика, уходящего в контейнер.
 ```
-/ip firewall nat add action=masquerade chain=srcnat out-interface=docker-xray-vless-veth
+/ip firewall nat add action=masquerade chain=srcnat out-interface=xray-vless
 ```
 6) Создадим переменные окружения envs под названием "xvr", которые позже при запуске будем передавать в контейнер.
 Параметры подключения Xray Vless вы должны взять из сервера панели 3x-ui. 
@@ -192,14 +192,15 @@ vless://e3203dfe-9s62-4de5-bf9b-ecd36c9af225@myhost.com:443?type=tcp&security=re
 Размещаем данные параметры для передачи в контейнер
 ```
 /container envs
-add key=SERVER_ADDRESS name=xvr value=myhost.com
-add key=SERVER_PORT name=xvr value=443
-add key=USER_ID name=xvr value=e3203dfe-9s62-4de5-bf9b-ecd36c9af225
-add key=ENCRYPTION name=xvr value=none
-add key=FINGERPRINT_FP name=xvr value=chrome
-add key=SERVER_NAME_SNI name=xvr value=apple.com
-add key=PUBLIC_KEY_PBK name=xvr value=fTndnleCTkK9_jtpwCAdxtEwJUkQ22oY1W8dTza2xHs
-add key=SHORT_ID_SID name=xvr value=29d2d3d5a398
+add key=SERVER_ADDRESS list=xvr value=myhost.com
+add key=SERVER_PORT list=xvr value=443
+add key=USER_ID list=xvr value=e3203dfe-9s62-4de5-bf9b-ecd36c9af225
+add key=ENCRYPTION list=xvr value=none
+add key=FINGERPRINT_FP list=xvr value=chrome
+add key=SERVER_NAME_SNI list=xvr value=apple.com
+add key=PUBLIC_KEY_PBK list=xvr value=fTndnleCTkK9_jtpwCAdxtEwJUkQ22oY1W8dTza2xHs
+add key=SHORT_ID_SID list=xvr value=29d2d3d5a398
+add key=TZ                list=xvr value=Europe/Moscow
 ```
 
 7) Теперь создадим сам контейнер. Здесь вам нужно выбрать репозиторий из [Docker Hub](https://hub.docker.com/r/gritsenko/xray-mikrotik) с архитектурой под ваше устройство.
