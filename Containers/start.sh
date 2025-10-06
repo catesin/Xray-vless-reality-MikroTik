@@ -4,6 +4,9 @@ sleep 1
 
 SERVER_IP_ADDRESS=$(ping -c 1 $SERVER_ADDRESS | awk -F'[()]' '{print $2}')
 
+NET_IFACE=$(ip -o link show | awk -F': ' '{print $2}' | grep -vE '^lo|^tun0' | head -n1 | cut -d'@' -f1)
+
+
 if [ -z "$SERVER_IP_ADDRESS" ]; then
   echo "Failed to obtain an IP address for FQDN $SERVER_ADDRESS"
   echo "Please configure DNS on Mikrotik"
@@ -17,19 +20,16 @@ ip link set dev tun0 up
 ip route del default via 172.18.20.5
 ip route add default via 172.31.200.10
 ip route add $SERVER_IP_ADDRESS/32 via 172.18.20.5
-#ip route add 1.0.0.1/32 via 172.18.20.5
-#ip route add 8.8.4.4/32 via 172.18.20.5
+
 
 rm -f /etc/resolv.conf
-tee -a /etc/resolv.conf <<< "nameserver 172.18.20.5"
-#tee -a /etc/resolv.conf <<< "nameserver 1.0.0.1"
-#tee -a /etc/resolv.conf <<< "nameserver 8.8.4.4"
-
+echo "nameserver 172.18.20.5" > /etc/resolv.conf
 
 cat <<EOF > /opt/xray/config/config.json
 {
   "log": {
-    "loglevel": "silent"
+    "access": "none",
+    "loglevel": "warning"
   },
   "inbounds": [
     {
@@ -82,15 +82,23 @@ cat <<EOF > /opt/xray/config/config.json
 EOF
 echo "Xray and tun2socks preparing for launch"
 rm -rf /tmp/xray/ && mkdir /tmp/xray/
-7z x /opt/xray/xray.7z -o/tmp/xray/ -y
+7z x /opt/xray/xray.7z -o/tmp/xray/ -y > /dev/null 2>&1
 chmod 755 /tmp/xray/xray
 rm -rf /tmp/tun2socks/ && mkdir /tmp/tun2socks/
-7z x /opt/tun2socks/tun2socks.7z -o/tmp/tun2socks/ -y
+7z x /opt/tun2socks/tun2socks.7z -o/tmp/tun2socks/ -y > /dev/null 2>&1
 chmod 755 /tmp/tun2socks/tun2socks
+cleanup() {
+    echo "Stopping Xray and tun2socks..."
+    killall xray
+    killall tun2socks
+    exit 0 
+}
+trap cleanup SIGTERM
 echo "Start Xray core"
 /tmp/xray/xray run -config /opt/xray/config/config.json &
 #pkill xray
 echo "Start tun2socks"
-/tmp/tun2socks/tun2socks -loglevel silent -tcp-sndbuf 3m -tcp-rcvbuf 3m -device tun0 -proxy socks5://127.0.0.1:10800 -interface eth0 &
+/tmp/tun2socks/tun2socks -loglevel silent -tcp-sndbuf 3m -tcp-rcvbuf 3m -device tun0 -proxy socks5://127.0.0.1:10800 -interface $NET_IFACE &
 #pkill tun2socks
 echo "Container customization is complete"
+wait
