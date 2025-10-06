@@ -1,9 +1,9 @@
 #Используем базовый образ с Alpine Linux для минимального размера
-ARG ALPINE_VERSION=3.21
+ARG ALPINE_VERSION=3.22
 #--------------------------------Image--------------------------------
 FROM alpine:${ALPINE_VERSION}
 RUN set -ex; \
-apk update && apk add --no-cache bash tzdata openrc openresolv iproute2 libqrencode p7zip
+apk update && apk add --no-cache bash tzdata iproute2 p7zip
 
 #Tun2Socks
 RUN mkdir /opt/tun2socks/
@@ -19,8 +19,8 @@ RUN chmod +x /opt/start.sh
 RUN sed -i 's/\r//' /opt/start.sh
 
 RUN sed -i 's/^tty/#tty/' /etc/inittab
-ENTRYPOINT ["sh", "-c"]
-CMD ["/bin/bash /opt/start.sh && /sbin/init"]
+ENTRYPOINT ["/opt/start.sh"]
+CMD []
 
 #https://github.com/XTLS/Xray-core
 #https://github.com/xjasonlyu/tun2socks

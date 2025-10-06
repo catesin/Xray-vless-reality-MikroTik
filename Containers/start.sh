@@ -23,13 +23,13 @@ ip route add $SERVER_IP_ADDRESS/32 via 172.18.20.5
 
 
 rm -f /etc/resolv.conf
-tee -a /etc/resolv.conf <<< "nameserver 172.18.20.5"
-
+echo "nameserver 172.18.20.5" > /etc/resolv.conf
 
 cat <<EOF > /opt/xray/config/config.json
 {
   "log": {
-    "loglevel": "silent"
+    "access": "none",
+    "loglevel": "warning"
   },
   "inbounds": [
     {
@@ -87,6 +87,13 @@ chmod 755 /tmp/xray/xray
 rm -rf /tmp/tun2socks/ && mkdir /tmp/tun2socks/
 7z x /opt/tun2socks/tun2socks.7z -o/tmp/tun2socks/ -y > /dev/null 2>&1
 chmod 755 /tmp/tun2socks/tun2socks
+cleanup() {
+    echo "Stopping Xray and tun2socks..."
+    killall xray
+    killall tun2socks
+    exit 0 
+}
+trap cleanup SIGTERM
 echo "Start Xray core"
 /tmp/xray/xray run -config /opt/xray/config/config.json &
 #pkill xray
@@ -94,3 +101,4 @@ echo "Start tun2socks"
 /tmp/tun2socks/tun2socks -loglevel silent -tcp-sndbuf 3m -tcp-rcvbuf 3m -device tun0 -proxy socks5://127.0.0.1:10800 -interface $NET_IFACE &
 #pkill tun2socks
 echo "Container customization is complete"
+wait
