@@ -160,7 +160,7 @@ add slot=ramstorage tmpfs-max-size=100M type=tmpfs
 ```
 ```
 /container config
-set ram-high=200.0MiB registry-url=https://registry-1.docker.io tmpdir=ramstorage
+set memory-high=200.0MiB registry-url=https://registry-1.docker.io tmpdir=ramstorage
 ```
 
 1) Создадим интерфейс для контейнера
