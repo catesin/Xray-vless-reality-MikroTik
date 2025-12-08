@@ -6,10 +6,9 @@ SERVER_IP_ADDRESS=$(ping -c 1 $SERVER_ADDRESS | awk -F'[()]' '{print $2}')
 
 NET_IFACE=$(ip -o link show | awk -F': ' '{print $2}' | grep -vE 'lo|tun' | head -n1 | cut -d'@' -f1)
 
-
 if [ -z "$SERVER_IP_ADDRESS" ]; then
   echo "Failed to obtain an IP address for FQDN $SERVER_ADDRESS"
-  echo "Please configure DNS on Mikrotik"
+  echo "Please configure DNS server on Mikrotik"
   exit 1
 fi
 
@@ -52,6 +51,7 @@ cat <<EOF > /opt/xray/config/config.json
   "outbounds": [
     {
       "protocol": "vless",
+	  "tag": "vless-reality",
       "settings": {
         "vnext": [
           {
@@ -59,7 +59,7 @@ cat <<EOF > /opt/xray/config/config.json
             "port": $SERVER_PORT,
             "users": [
               {
-                "id": "$USER_ID",
+                "id": "$ID",
                 "encryption": "$ENCRYPTION",
                 "flow": "$FLOW"
               }
@@ -71,16 +71,20 @@ cat <<EOF > /opt/xray/config/config.json
         "network": "tcp",
         "security": "reality",
         "realitySettings": {
-          "fingerprint": "$FINGERPRINT_FP",
-          "serverName": "$SERVER_NAME_SNI",
-          "publicKey": "$PUBLIC_KEY_PBK",
-          "spiderX": "$SPIDERX",
-          "shortId": "$SHORT_ID_SID"
+          "fingerprint": "$FP",
+          "serverName": "$SNI",
+          "publicKey": "$PBK",
+          "shortId": "$SID",
+		  "spx": "$SPX",
+		  "pqv":"$PQV"
         }
-      },
-	  "tag": "proxy"
+      }
     }
-  ]
+  ],
+  "routing": {
+    "domainStrategy": "AsIs",
+    "rules": []
+  }
 }
 EOF
 echo "Xray and tun2socks preparing for launch"
@@ -93,6 +97,15 @@ chmod 755 /tmp/tun2socks/tun2socks
 echo "Start Xray core"
 /tmp/xray/xray run -config /opt/xray/config/config.json &
 #pkill xray
+echo "Waiting for Xray SOCKS port 10800..."
+for i in $(seq 1 10); do
+    if nc -z 127.0.0.1 10800 2>/dev/null; then
+        echo "SOCKS port is up!"
+        break
+    fi
+    echo "Port Xray not ready, retrying..."
+    sleep 1
+done
 echo "Start tun2socks"
 /tmp/tun2socks/tun2socks -loglevel silent -tcp-sndbuf 3m -tcp-rcvbuf 3m -device tun0 -proxy socks5://127.0.0.1:10800 -interface $NET_IFACE &
 #pkill tun2socks

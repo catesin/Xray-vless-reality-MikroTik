@@ -1,5 +1,5 @@
 #Используем базовый образ с Alpine Linux для минимального размера
-ARG ALPINE_VERSION=3.21
+ARG ALPINE_VERSION=3.23
 #--------------------------------Image--------------------------------
 FROM alpine:${ALPINE_VERSION}
 RUN set -ex; \
