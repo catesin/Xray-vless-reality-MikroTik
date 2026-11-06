@@ -6,7 +6,7 @@
 :dizzy: Аналог [AmneziaWG + MikroTik](https://github.com/catesin/AmneziaWG-MikroTik)
 
 
-В данном репозитории рассматривается работа MikroTik RouterOS V7.23.1+ с протоколом **XRay Vless Reality**. В процессе настройки, относительно вашего оборудования, следует выбрать вариант реализации с [контейнером](https://help.mikrotik.com/docs/display/ROS/Container) внутри RouterOS или без контейнера. 
+В данном репозитории рассматривается работа MikroTik RouterOS V7.26.4+ с протоколом **XRay Vless Reality**. В процессе настройки, относительно вашего оборудования, следует выбрать вариант реализации с [контейнером](https://manual.mikrotik.com/docs/containers/) внутри RouterOS или без контейнера. 
 
 Предполагается что вы уже настроили серверную часть Xray например [с помощью панели управления 3x-ui](https://github.com/MHSanaei/3x-ui) и протестировали конфигурацию клиента, например на смартфоне или персональном ПК.
 
